@@ -40,7 +40,9 @@ Suggests:
     shiny,
     yaml,
     promises,
+    testthat (>= 3.0.0),
     zip
+Config/testthat/edition: 3
 Collate:
     'mvn.R'
     'mardia.R'
@@ -67,10 +69,10 @@ Description:
     detection, power transformations (e.g., Box–Cox, Yeo–Johnson), and imputation strategies 
     ("mean", "median", "mice") for handling missing data. Bootstrap resampling is supported 
     for selected tests to improve p-value accuracy in small samples.
-    Diagnostic plots are available via both 'ggplot2' and interactive 'plotly' visualizations. See Korkmaz et al. (2014) <https://journal.r-project.org/archive/2014-2/korkmaz-goksuluk-zararsiz.pdf>.
+    Diagnostic plots are available via both 'ggplot2' and interactive 'plotly' visualizations. See Korkmaz et al. (2014) <https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf>.
 Encoding: UTF-8
 License: MIT + file LICENSE
-URL: https://selcukorkmaz.github.io/mvn-tutorial/, https://github.com/selcukorkmaz/MVN, https://biosoft.shinyapps.io/mvn-shiny-app/
+URL: https://biosoft.shinyapps.io/mvn-shiny-app/, https://selcukorkmaz.github.io/mvn-tutorial/, https://github.com/selcukorkmaz/MVN
 BugReports: https://github.com/selcukorkmaz/MVN/issues
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 NeedsCompilation: no

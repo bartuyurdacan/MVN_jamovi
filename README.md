@@ -96,7 +96,7 @@ mvn(data = iris, subset = "Species", mvn_test = "hz")
 ## Shiny Web App
 
 Explore MVN’s features via a user-friendly web interface:
-http://biosoft.erciyes.edu.tr/app/MVN
+https://biosoft.shinyapps.io/mvn-shiny-app/
 
 To launch the Shiny app locally from the MVN package, run:
 
@@ -116,7 +116,7 @@ https://selcukorkmaz.github.io/mvn-tutorial/
 Please cite MVN in your publications using:
 
 Korkmaz S, Goksuluk D, Zararsiz G. MVN: An R Package for Assessing Multivariate Normality. The R Journal. 2014; 6(2):151-162.
-https://journal.r-project.org/archive/2014-2/korkmaz-goksuluk-zararsiz.pdf
+https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf
 
 
 ## License
