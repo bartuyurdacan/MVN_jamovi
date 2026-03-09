@@ -1,0 +1,201 @@
+---
+name: mvntest
+title: Multivariate Normality Test
+menuGroup: MVN
+version: '6.3.0'
+jas: '1.2'
+
+options:
+    - name: data
+      type: Data
+
+    - name: vars
+      title: Variables
+      type: Variables
+      suggested:
+        - continuous
+      permitted:
+        - numeric
+      description: >
+        Numeric variables to test for multivariate normality.
+
+    - name: group
+      title: Grouping Variable
+      type: Variable
+      suggested:
+        - nominal
+      permitted:
+        - factor
+      default: null
+      description: >
+        Optional grouping variable for stratified analysis.
+
+    - name: mvnTest
+      title: Multivariate Normality Test
+      type: List
+      options:
+        - title: Henze-Zirkler
+          name: hz
+        - title: Mardia
+          name: mardia
+        - title: Henze-Wagner
+          name: hw
+        - title: Royston
+          name: royston
+        - title: Doornik-Hansen
+          name: doornik_hansen
+        - title: Energy
+          name: energy
+      default: hz
+      description: >
+        The multivariate normality test to use.
+
+    - name: univariateTest
+      title: Univariate Normality Test
+      type: List
+      options:
+        - title: Anderson-Darling
+          name: AD
+        - title: Shapiro-Wilk
+          name: SW
+        - title: Shapiro-Francia
+          name: SF
+        - title: "Cram\xE9r-von Mises"
+          name: CVM
+        - title: Lilliefors
+          name: Lillie
+      default: AD
+      description: >
+        The univariate normality test to apply to each variable.
+
+    - name: showDescriptives
+      title: Descriptive Statistics
+      type: Bool
+      default: true
+      description: >
+        Show descriptive statistics table.
+
+    - name: outlierMethod
+      title: Multivariate Outlier Detection
+      type: List
+      options:
+        - title: None
+          name: none
+        - title: Quantile Method
+          name: quan
+        - title: Adjusted Method
+          name: adj
+      default: none
+      description: >
+        Method for detecting multivariate outliers using robust
+        Mahalanobis distance.
+
+    - name: outlierAlpha
+      title: Outlier Significance Level
+      type: Number
+      min: 0.001
+      max: 0.5
+      default: 0.05
+      description: >
+        Significance level for outlier detection.
+
+    - name: transform
+      title: Marginal Transformation
+      type: List
+      options:
+        - title: None
+          name: none
+        - title: Log
+          name: log
+        - title: Square Root
+          name: sqrt
+        - title: Square
+          name: square
+      default: none
+      description: >
+        Marginal transformation to apply to each variable.
+
+    - name: powerFamily
+      title: Power Transformation
+      type: List
+      options:
+        - title: None
+          name: none
+        - title: Box-Cox
+          name: bcPower
+        - title: Box-Cox (with negatives)
+          name: bcnPower
+        - title: Yeo-Johnson
+          name: yjPower
+      default: none
+      description: >
+        Power transformation family to apply before analysis.
+
+    - name: scale
+      title: Standardize Data
+      type: Bool
+      default: false
+      description: >
+        Standardize data (zero mean, unit variance) before analysis.
+
+    - name: impute
+      title: Missing Data Handling
+      type: List
+      options:
+        - title: Listwise Deletion
+          name: none
+        - title: Mean Imputation
+          name: mean
+        - title: Median Imputation
+          name: median
+        - title: MICE
+          name: mice
+      default: none
+      description: >
+        Method for handling missing data.
+
+    - name: bootstrap
+      title: Bootstrap p-values
+      type: Bool
+      default: false
+      description: >
+        Use bootstrap resampling for p-value estimation.
+
+    - name: nBoot
+      title: Number of Bootstrap Replicates
+      type: Integer
+      min: 100
+      max: 100000
+      default: 1000
+      description: >
+        Number of bootstrap replicates.
+
+    - name: showQQPlot
+      title: Multivariate Q-Q Plot
+      type: Bool
+      default: false
+      description: >
+        Show chi-square Q-Q plot for multivariate normality assessment.
+
+    - name: showUniPlots
+      title: Univariate Diagnostic Plots
+      type: Bool
+      default: false
+      description: >
+        Show univariate Q-Q plots for each variable.
+
+    - name: showBoxPlots
+      title: Box Plots
+      type: Bool
+      default: false
+      description: >
+        Show box plots for each variable.
+
+    - name: showHistograms
+      title: Histograms
+      type: Bool
+      default: false
+      description: >
+        Show histograms with normal curve overlay.
+
+...

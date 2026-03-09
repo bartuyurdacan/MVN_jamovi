@@ -1,0 +1,225 @@
+---
+name: mvntest
+title: Multivariate Normality Test
+jrs: '1.1'
+
+items:
+    - name: mvnTable
+      title: Multivariate Normality Test
+      type: Table
+      rows: 0
+      visible: true
+      clearWith:
+        - vars
+        - group
+        - mvnTest
+        - transform
+        - powerFamily
+        - scale
+        - impute
+        - bootstrap
+        - nBoot
+      columns:
+        - name: group
+          title: Group
+          type: text
+          visible: (group)
+        - name: test
+          title: Test
+          type: text
+        - name: statistic
+          title: Statistic
+          type: number
+          format: zto
+        - name: pvalue
+          title: p
+          type: number
+          format: zto,pvalue
+        - name: result
+          title: Result
+          type: text
+
+    - name: uniTable
+      title: Univariate Normality Tests
+      type: Table
+      rows: 0
+      visible: true
+      clearWith:
+        - vars
+        - group
+        - univariateTest
+        - transform
+        - powerFamily
+        - scale
+        - impute
+      columns:
+        - name: group
+          title: Group
+          type: text
+          visible: (group)
+        - name: test
+          title: Test
+          type: text
+        - name: var
+          title: Variable
+          type: text
+        - name: statistic
+          title: Statistic
+          type: number
+          format: zto
+        - name: pvalue
+          title: p
+          type: number
+          format: zto,pvalue
+        - name: normality
+          title: Normality
+          type: text
+
+    - name: descTable
+      title: Descriptive Statistics
+      type: Table
+      rows: 0
+      visible: (showDescriptives)
+      clearWith:
+        - vars
+        - group
+        - transform
+        - powerFamily
+        - scale
+        - impute
+      columns:
+        - name: group
+          title: Group
+          type: text
+          visible: (group)
+        - name: var
+          title: Variable
+          type: text
+        - name: n
+          title: n
+          type: integer
+        - name: mean
+          title: Mean
+          type: number
+          format: zto
+        - name: sd
+          title: Std. Dev.
+          type: number
+          format: zto
+        - name: median
+          title: Median
+          type: number
+          format: zto
+        - name: min
+          title: Min
+          type: number
+          format: zto
+        - name: max
+          title: Max
+          type: number
+          format: zto
+        - name: q25
+          title: 25th
+          type: number
+          format: zto
+        - name: q75
+          title: 75th
+          type: number
+          format: zto
+        - name: skew
+          title: Skewness
+          type: number
+          format: zto
+        - name: kurtosis
+          title: Kurtosis
+          type: number
+          format: zto
+
+    - name: outlierTable
+      title: Multivariate Outliers
+      type: Table
+      rows: 0
+      visible: (outlierMethod:quan || outlierMethod:adj)
+      clearWith:
+        - vars
+        - group
+        - outlierMethod
+        - outlierAlpha
+        - transform
+        - powerFamily
+        - scale
+        - impute
+      columns:
+        - name: group
+          title: Group
+          type: text
+          visible: (group)
+        - name: obs
+          title: Observation
+          type: integer
+        - name: mahal
+          title: Mahalanobis Distance
+          type: number
+          format: zto
+
+    - name: qqPlot
+      title: Multivariate Q-Q Plot
+      type: Image
+      width: 500
+      height: 400
+      renderFun: .qqPlot
+      visible: (showQQPlot)
+      clearWith:
+        - vars
+        - group
+        - transform
+        - powerFamily
+        - scale
+        - impute
+
+    - name: uniPlots
+      title: Univariate Q-Q Plots
+      type: Image
+      width: 600
+      height: 400
+      renderFun: .uniQQPlots
+      visible: (showUniPlots)
+      clearWith:
+        - vars
+        - group
+        - transform
+        - powerFamily
+        - scale
+        - impute
+
+    - name: boxPlots
+      title: Box Plots
+      type: Image
+      width: 600
+      height: 400
+      renderFun: .boxPlots
+      visible: (showBoxPlots)
+      clearWith:
+        - vars
+        - group
+        - transform
+        - powerFamily
+        - scale
+        - impute
+
+    - name: histPlots
+      title: Histograms
+      type: Image
+      width: 600
+      height: 400
+      renderFun: .histPlots
+      visible: (showHistograms)
+      clearWith:
+        - vars
+        - group
+        - transform
+        - powerFamily
+        - scale
+        - impute
+
+...

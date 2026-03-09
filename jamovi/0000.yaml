@@ -1,0 +1,34 @@
+---
+title: MVN - Multivariate Normality Tests
+name: MVN
+version: 6.3.0
+jms: '1.0'
+authors:
+  - Selcuk Korkmaz
+  - Dincer Goksuluk
+  - Gokmen Zararsiz
+maintainer: Selcuk Korkmaz <selcukorkmaz@gmail.com>
+date: '2026-03-09'
+type: R
+description: >
+  A comprehensive suite for assessing multivariate normality using six
+  statistical tests (Mardia, Henze-Zirkler, Henze-Wagner, Royston,
+  Doornik-Hansen, Energy). Includes univariate diagnostics, descriptive
+  statistics, robust outlier detection, and power transformations.
+analyses:
+  - title: Multivariate Normality Test
+    name: mvntest
+    ns: MVN
+    menuGroup: MVN
+    menuTitle: Multivariate Normality Test
+    menuSubgroup: null
+    description: >
+      Perform multivariate and univariate normality tests with optional
+      outlier detection, descriptive statistics, and data transformations.
+
+datasets: []
+
+usesNative: false
+minApp: 1.0.8
+
+...

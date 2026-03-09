@@ -1,8 +1,8 @@
 Package: MVN
 Type: Package
 Title: Multivariate Normality Tests
-Version: 6.3
-Authors@R: 
+Version: 6.3.0
+Authors@R:
     c(
       person(given = "Selcuk", family = "Korkmaz", role = c("aut", "cre"),
              email = "selcukorkmaz@gmail.com", comment = c(ORCID = "0000-0003-4632-6850")),
@@ -13,6 +13,8 @@ Authors@R:
     )
 Maintainer: Selcuk Korkmaz <selcukorkmaz@gmail.com>
 Imports:
+    jmvcore (>= 0.8.5),
+    R6,
     methods,
     nortest,
     moments,
@@ -44,6 +46,7 @@ Suggests:
     zip
 Config/testthat/edition: 3
 Collate:
+    '00jmv.R'
     'mvn.R'
     'mardia.R'
     'hz.R'
@@ -62,12 +65,14 @@ Collate:
     'summary.mvn.R'
     'impute_missing.R'
     'run_mvn_app.R'
+    'mvntest.h.R'
+    'mvntest.b.R'
 Description:
-    A comprehensive suite for assessing multivariate normality using six statistical tests 
-    (Mardia, Henze–Zirkler, Henze–Wagner, Royston, Doornik–Hansen, Energy). 
-    Also includes univariate diagnostics, bivariate density visualization, robust outlier 
-    detection, power transformations (e.g., Box–Cox, Yeo–Johnson), and imputation strategies 
-    ("mean", "median", "mice") for handling missing data. Bootstrap resampling is supported 
+    A comprehensive jamovi module for assessing multivariate normality using six statistical tests
+    (Mardia, Henze-Zirkler, Henze-Wagner, Royston, Doornik-Hansen, Energy).
+    Also includes univariate diagnostics, bivariate density visualization, robust outlier
+    detection, power transformations (e.g., Box-Cox, Yeo-Johnson), and imputation strategies
+    ("mean", "median", "mice") for handling missing data. Bootstrap resampling is supported
     for selected tests to improve p-value accuracy in small samples.
     Diagnostic plots are available via both 'ggplot2' and interactive 'plotly' visualizations. See Korkmaz et al. (2014) <https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf>.
 Encoding: UTF-8
