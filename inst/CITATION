@@ -16,3 +16,18 @@ bibentry(
   url     = "https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf",
   textVersion = "Korkmaz S, Goksuluk D, Zararsiz G. MVN: An R Package for Assessing Multivariate Normality. The R Journal. 2014; 6(2):151-162."
 )
+
+bibentry(
+  bibtype = "Misc",
+  title   = "MVN for jamovi: A Graphical Module for Multivariate Normality Assessment.",
+  author  = c(
+    person("Fikret Bartu", "Yurdacan"),
+    person("Selcuk", "Korkmaz"),
+    person("Dincer", "Goksuluk"),
+    person("Gokmen", "Zararsiz")
+  ),
+  year    = "2026",
+  url     = "https://github.com/bartuyurdacan/MVN_jamovi",
+  note    = "jamovi module, version 6.3.0",
+  textVersion = "Yurdacan FB, Korkmaz S, Goksuluk D, Zararsiz G (2026). MVN for jamovi: A Graphical Module for Multivariate Normality Assessment. https://github.com/bartuyurdacan/MVN_jamovi"
+)

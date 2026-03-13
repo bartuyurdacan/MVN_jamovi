@@ -4,14 +4,16 @@ Title: Multivariate Normality Tests
 Version: 6.3.0
 Authors@R:
     c(
-      person(given = "Selcuk", family = "Korkmaz", role = c("aut", "cre"),
+      person(given = "Selcuk", family = "Korkmaz", role = "aut",
              email = "selcukorkmaz@gmail.com", comment = c(ORCID = "0000-0003-4632-6850")),
       person(given = "Dincer", family = "Goksuluk", role = "aut",
              email = "dincer.goksuluk@gmail.com"),
       person(given = "Gokmen", family = "Zararsiz", role = "aut",
-             email = "gokmenzararsiz@hotmail.com")
+             email = "gokmenzararsiz@hotmail.com"),
+      person(given = "Fikret Bartu", family = "Yurdacan", role = c("aut", "cre"),
+             email = "fbartuyurdacan@trakya.edu.tr", comment = c(ORCID = "0000-0001-8168-7497"))
     )
-Maintainer: Selcuk Korkmaz <selcukorkmaz@gmail.com>
+Maintainer: Fikret Bartu Yurdacan <fbartuyurdacan@trakya.edu.tr>
 Imports:
     jmvcore (>= 0.8.5),
     R6,
@@ -45,28 +47,6 @@ Suggests:
     testthat (>= 3.0.0),
     zip
 Config/testthat/edition: 3
-Collate:
-    '00jmv.R'
-    'mvn.R'
-    'mardia.R'
-    'hz.R'
-    'hw.R'
-    'royston.R'
-    'doornik_hansen.R'
-    'energy.R'
-    'descriptives.R'
-    'test_univariate_normality.R'
-    'multivariate_diagnostic_plot.R'
-    'mv_outlier.R'
-    'univariate_diagnostic_plot.R'
-    'power_transform.R'
-    'arw_adjustment.R'
-    'plot.mvn.R'
-    'summary.mvn.R'
-    'impute_missing.R'
-    'run_mvn_app.R'
-    'mvntest.h.R'
-    'mvntest.b.R'
 Description:
     A comprehensive jamovi module for assessing multivariate normality using six statistical tests
     (Mardia, Henze-Zirkler, Henze-Wagner, Royston, Doornik-Hansen, Energy).
@@ -77,7 +57,7 @@ Description:
     Diagnostic plots are available via both 'ggplot2' and interactive 'plotly' visualizations. See Korkmaz et al. (2014) <https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf>.
 Encoding: UTF-8
 License: MIT + file LICENSE
-URL: https://biosoft.shinyapps.io/mvn-shiny-app/, https://selcukorkmaz.github.io/mvn-tutorial/, https://github.com/selcukorkmaz/MVN
-BugReports: https://github.com/selcukorkmaz/MVN/issues
+URL: https://github.com/bartuyurdacan/MVN_jamovi
+BugReports: https://github.com/bartuyurdacan/MVN_jamovi/issues
 RoxygenNote: 7.3.3
 NeedsCompilation: no

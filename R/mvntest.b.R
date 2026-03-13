@@ -1,7 +1,7 @@
 
 #' @importFrom jmvcore .
-#' @importFrom stats mahalanobis qchisq cov qqnorm qqline dnorm sd
-#' @importFrom graphics par abline hist curve boxplot
+#' @importFrom stats mahalanobis qchisq ppoints cov qqnorm qqline dnorm sd
+#' @importFrom graphics par abline hist curve boxplot plot
 
 mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
   R6::R6Class(
@@ -20,6 +20,7 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         if (is.null(data))
           return()
 
+        vars <- self$options$vars
         hasGroup <- !is.null(self$options$group)
 
         if (hasGroup) {
@@ -33,6 +34,14 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         } else {
           private$.runSingle(data)
         }
+
+        # Store prepared data as state for plot render functions
+        # (self$data is not available when render functions are called)
+        plotData <- as.data.frame(data[, vars, drop = FALSE])
+        self$results$qqPlot$setState(plotData)
+        self$results$uniPlots$setState(plotData)
+        self$results$boxPlots$setState(plotData)
+        self$results$histPlots$setState(plotData)
       },
 
       # ---- Prepare data ----
@@ -251,64 +260,42 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
       # ---- Multivariate Q-Q Plot ----
       .qqPlot = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
+        if (is.null(image$state))
           return(FALSE)
 
-        data <- private$.prepareData()
-        if (is.null(data))
+        data <- image$state
+        numData <- as.matrix(data)
+
+        n <- nrow(numData)
+        p <- ncol(numData)
+        if (n < 3 || p < 2)
           return(FALSE)
 
-        vars <- self$options$vars
-        hasGroup <- !is.null(self$options$group)
-
-        if (hasGroup) {
-          groupVar <- self$options$group
-          splitData <- split(
-            data[, !(colnames(data) %in% groupVar), drop = FALSE],
-            data[[groupVar]]
-          )
-          nGroups <- length(splitData)
-          par(mfrow = c(1, min(nGroups, 3)))
-          for (g in names(splitData)) {
-            grpData <- as.matrix(splitData[[g]])
-            private$.drawQQ(grpData, title = g)
-          }
-          par(mfrow = c(1, 1))
-        } else {
-          numData <- as.matrix(data[, vars, drop = FALSE])
-          private$.drawQQ(numData, title = "Multivariate Q-Q Plot")
-        }
-
-        TRUE
-      },
-
-      .drawQQ = function(data, title = "") {
-        n <- nrow(data)
-        p <- ncol(data)
-        S <- cov(data)
-        xbar <- colMeans(data)
-        d2 <- mahalanobis(data, center = xbar, cov = S)
+        S <- cov(numData)
+        xbar <- colMeans(numData)
+        d2 <- mahalanobis(numData, center = xbar, cov = S)
         d2 <- sort(d2)
         chi2q <- qchisq(ppoints(n), df = p)
 
         plot(chi2q, d2,
-             main = title,
+             main = "Multivariate Q-Q Plot",
              xlab = "Chi-Square Quantile",
              ylab = "Mahalanobis Distance",
              pch = 19, col = "steelblue")
         abline(a = 0, b = 1, col = "red", lwd = 2)
+        TRUE
       },
 
       # ---- Univariate Q-Q Plots ----
       .uniQQPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
+        if (is.null(image$state))
           return(FALSE)
 
-        data <- private$.prepareData()
-        if (is.null(data))
+        data <- image$state
+        vars <- colnames(data)
+        if (length(vars) < 2)
           return(FALSE)
 
-        vars <- self$options$vars
         nv <- length(vars)
         nc <- min(nv, 3)
         nr <- ceiling(nv / nc)
@@ -325,41 +312,43 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
       # ---- Box Plots ----
       .boxPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
+        if (is.null(image$state))
           return(FALSE)
 
-        data <- private$.prepareData()
-        if (is.null(data))
+        data <- image$state
+        if (ncol(data) < 2)
           return(FALSE)
 
-        vars <- self$options$vars
-        boxData <- data[, vars, drop = FALSE]
-        boxplot(boxData, col = "steelblue", main = "Box Plots",
+        boxplot(data, col = "steelblue", main = "Box Plots",
                 las = 2, border = "darkblue")
         TRUE
       },
 
       # ---- Histograms ----
       .histPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
+        if (is.null(image$state))
           return(FALSE)
 
-        data <- private$.prepareData()
-        if (is.null(data))
+        data <- image$state
+        vars <- colnames(data)
+        if (length(vars) < 2)
           return(FALSE)
 
-        vars <- self$options$vars
         nv <- length(vars)
         nc <- min(nv, 3)
         nr <- ceiling(nv / nc)
         par(mfrow = c(nr, nc))
 
         for (v in vars) {
-          x <- data[[v]]
-          hist(x, main = v, xlab = v, col = "steelblue",
+          vals <- data[[v]]
+          m <- mean(vals, na.rm = TRUE)
+          s <- sd(vals, na.rm = TRUE)
+          hist(vals, main = v, xlab = v, col = "steelblue",
                border = "white", freq = FALSE, breaks = "Sturges")
-          curve(dnorm(x, mean = mean(x), sd = sd(x)),
-                add = TRUE, col = "red", lwd = 2)
+          if (!is.na(s) && s > 0) {
+            curve(dnorm(x, mean = m, sd = s),
+                  add = TRUE, col = "red", lwd = 2)
+          }
         }
 
         par(mfrow = c(1, 1))

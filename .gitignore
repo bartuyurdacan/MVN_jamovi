@@ -1,6 +1,23 @@
+# R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# Build artifacts
+build/
+*.jmo
 doc
 Meta
+inst/doc
+
+# Test / debug files
+debug_plot.log
+test_*.R
+test_*.png
+verify_results.R
+build_jmo.R
+
+# OS
+.DS_Store
+Thumbs.db

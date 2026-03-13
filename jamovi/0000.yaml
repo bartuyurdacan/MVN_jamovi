@@ -7,7 +7,8 @@ authors:
   - Selcuk Korkmaz
   - Dincer Goksuluk
   - Gokmen Zararsiz
-maintainer: Selcuk Korkmaz <selcukorkmaz@gmail.com>
+  - Fikret Bartu Yurdacan
+maintainer: Fikret Bartu Yurdacan <fbartuyurdacan@trakya.edu.tr>
 date: '2026-03-09'
 type: R
 description: >
@@ -23,11 +24,10 @@ analyses:
     menuTitle: Multivariate Normality Test
     menuSubgroup: null
     description: >
-      Perform multivariate and univariate normality tests with optional
-      outlier detection, descriptive statistics, and data transformations.
-
+      Perform multivariate and univariate normality tests with optional outlier
+      detection, descriptive statistics, and data transformations.
+    category: analyses
 datasets: []
-
 usesNative: false
 minApp: 1.0.8
 
