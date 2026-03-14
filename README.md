@@ -66,6 +66,8 @@ This module brings the full capabilities of the [MVN R package](https://cran.r-p
 3. Click the **Modules** button (+ icon, top-right)
 4. Select **Sideload** and choose the downloaded `.jmo` file
 
+> **Note:** The `.jmo` file must be built with the same R version that your jamovi uses. See the [Building the .jmo file](#building-the-jmo-file) section for details.
+
 ### Option 2: Build from source
 
 ```r
@@ -86,7 +88,7 @@ devtools::install_github("bartuyurdacan/MVN_jamovi")
 
 # Usage
 library(MVN)
-result <- mvn(data = iris[, 1:4], mvn_test = "hz")
+result <- mvn(data = iris[, 1:4])
 summary(result)
 ```
 
@@ -163,6 +165,97 @@ Univariate Normality Tests
     │  Descriptive Statistics · Outliers    │
     └───────────────────────────────────────┘
 ```
+
+---
+
+## Dependencies
+
+The MVN module requires the following R packages to be bundled in the `.jmo` file:
+
+### Direct Imports
+
+| Package | Purpose |
+|---------|---------|
+| `jmvcore` (>= 0.8.5) | jamovi analysis framework |
+| `R6` | R6 class system |
+| `nortest` | Univariate normality tests (AD, CVM, Lilliefors, SF) |
+| `moments` | Skewness and kurtosis calculations |
+| `MASS` | Robust covariance estimation (MCD) |
+| `boot` | Bootstrap resampling |
+| `car` | Power transformations (Box-Cox, Yeo-Johnson) |
+| `dplyr` | Data manipulation |
+| `tidyr` | Data reshaping |
+| `purrr` | Functional programming utilities |
+| `stringr` | String operations |
+| `tibble` | Modern data frames |
+| `ggplot2` | Diagnostic plots |
+| `viridis` | Color palettes |
+| `cli` | Console output formatting |
+| `energy` | E-statistic multivariate normality test |
+| `plotly` | Interactive plots |
+| `mice` | Multiple imputation (MICE) |
+
+> **Important:** `jmvcore`, `tibble`, `MASS`, and `boot` are provided by jamovi itself. All other packages (and their recursive dependencies) must be bundled inside the `.jmo` file.
+
+---
+
+## Building the .jmo file
+
+The `.jmo` file contains pre-compiled R packages, so it **must be built with the same R version** that the target jamovi uses. A `.jmo` built with R 4.5.0 will not work in a jamovi that bundles R 4.4.x.
+
+### Using jamovi's R directly
+
+```bash
+# 1. Find your jamovi's R
+#    Windows: "C:/Program Files/jamovi X.Y.Z/Frameworks/R/bin/x64/"
+#    macOS:   "/Applications/jamovi.app/Contents/Frameworks/R/bin/"
+
+# 2. Set paths
+JAMOVI_R="C:/Program Files/jamovi 2.6.19.0/Frameworks/R/bin/x64"
+MODULE_LIB="./build/MVN/R"
+JMVCORE_LIB="C:/Program Files/jamovi 2.6.19.0/Resources/modules/base/R"
+R_LIBRARY="C:/Program Files/jamovi 2.6.19.0/Frameworks/R/library"
+
+# 3. Install dependencies using jamovi's R
+"$JAMOVI_R/Rscript.exe" -e "
+  .libPaths(c('$MODULE_LIB', '$JMVCORE_LIB', '$R_LIBRARY'))
+  install.packages(c('R6','nortest','moments','car','dplyr','tidyr',
+    'purrr','stringr','ggplot2','viridis','cli','energy','plotly','mice'),
+    lib='$MODULE_LIB', repos='https://cran.r-project.org',
+    type='binary', dependencies=TRUE)
+"
+
+# 4. Install MVN from source
+R_LIBS="$MODULE_LIB;$JMVCORE_LIB;$R_LIBRARY" \
+  "$JAMOVI_R/Rcmd.exe" INSTALL --no-byte-compile --no-multiarch \
+  --library="$MODULE_LIB" .
+
+# 5. Package as .jmo (zip with forward slashes)
+python -c "
+import zipfile, os
+with zipfile.ZipFile('MVN_6.3.0.jmo', 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk('build/MVN'):
+        for f in files:
+            path = os.path.join(root, f)
+            arcname = os.path.relpath(path, 'build').replace(os.sep, '/')
+            zf.write(path, arcname)
+"
+```
+
+### Using the build script
+
+```bash
+python build_jmo.py "C:/Program Files/jamovi 2.6.19.0"
+# Output: MVN_6.3.0_R4.4.1.jmo
+```
+
+### Version compatibility
+
+| jamovi version | Bundled R | .jmo compatibility |
+|---|---|---|
+| 2.6.x | R 4.4.x | Build with R 4.4.x |
+| 2.5.x | R 4.3.x | Build with R 4.3.x |
+| 2.4.x | R 4.2.x | Build with R 4.2.x |
 
 ---
 
