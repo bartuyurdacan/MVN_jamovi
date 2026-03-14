@@ -4,14 +4,16 @@ Title: Multivariate Normality Tests
 Version: 6.3.0
 Authors@R:
     c(
-      person(given = "Selcuk", family = "Korkmaz", role = c("aut", "cre"),
+      person(given = "Fikret Bartu", family = "Yurdacan", role = c("aut", "cre"),
+             email = "fbartuyurdacan@trakya.edu.tr"),
+      person(given = "Selcuk", family = "Korkmaz", role = "aut",
              email = "selcukorkmaz@gmail.com", comment = c(ORCID = "0000-0003-4632-6850")),
       person(given = "Dincer", family = "Goksuluk", role = "aut",
              email = "dincer.goksuluk@gmail.com"),
       person(given = "Gokmen", family = "Zararsiz", role = "aut",
              email = "gokmenzararsiz@hotmail.com")
     )
-Maintainer: Selcuk Korkmaz <selcukorkmaz@gmail.com>
+Maintainer: Fikret Bartu Yurdacan <fbartuyurdacan@trakya.edu.tr>
 Imports:
     jmvcore (>= 0.8.5),
     R6,
@@ -46,7 +48,6 @@ Suggests:
     zip
 Config/testthat/edition: 3
 Collate:
-    '00jmv.R'
     'mvn.R'
     'mardia.R'
     'hz.R'

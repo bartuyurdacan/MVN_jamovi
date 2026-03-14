@@ -1,7 +1,8 @@
 
 #' @importFrom jmvcore .
-#' @importFrom stats mahalanobis qchisq cov qqnorm qqline dnorm sd
-#' @importFrom graphics par abline hist curve boxplot
+#' @importFrom stats mahalanobis qchisq cov dnorm sd ppoints
+#' @importFrom ggplot2 ggplot aes geom_point geom_abline geom_line labs
+#'   facet_wrap stat_qq stat_qq_line geom_histogram after_stat geom_boxplot
 
 mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
   R6::R6Class(
@@ -33,6 +34,47 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         } else {
           private$.runSingle(data)
         }
+
+        # Store plot data in image state for deferred rendering
+        vars <- self$options$vars
+        plotData <- as.data.frame(data[, vars, drop = FALSE])
+
+        # Multivariate Q-Q data
+        if (hasGroup) {
+          groupVar <- self$options$group
+          splitNum <- split(
+            data[, !(colnames(data) %in% groupVar), drop = FALSE],
+            data[[groupVar]]
+          )
+          qqDFs <- lapply(names(splitNum), function(g) {
+            grpData <- as.matrix(splitNum[[g]])
+            private$.qqData(grpData, group = g)
+          })
+          qqDF <- do.call(rbind, qqDFs)
+        } else {
+          numData <- as.matrix(plotData)
+          qqDF <- private$.qqData(numData)
+        }
+
+        self$results$qqPlot$setState(list(
+          qqDF = qqDF,
+          hasGroup = hasGroup
+        ))
+
+        self$results$uniPlots$setState(list(
+          data = plotData,
+          vars = vars
+        ))
+
+        self$results$boxPlots$setState(list(
+          data = plotData,
+          vars = vars
+        ))
+
+        self$results$histPlots$setState(list(
+          data = plotData,
+          vars = vars
+        ))
       },
 
       # ---- Prepare data ----
@@ -249,121 +291,132 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         }
       },
 
-      # ---- Multivariate Q-Q Plot ----
-      .qqPlot = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
-          return(FALSE)
-
-        data <- private$.prepareData()
-        if (is.null(data))
-          return(FALSE)
-
-        vars <- self$options$vars
-        hasGroup <- !is.null(self$options$group)
-
-        if (hasGroup) {
-          groupVar <- self$options$group
-          splitData <- split(
-            data[, !(colnames(data) %in% groupVar), drop = FALSE],
-            data[[groupVar]]
-          )
-          nGroups <- length(splitData)
-          par(mfrow = c(1, min(nGroups, 3)))
-          for (g in names(splitData)) {
-            grpData <- as.matrix(splitData[[g]])
-            private$.drawQQ(grpData, title = g)
-          }
-          par(mfrow = c(1, 1))
-        } else {
-          numData <- as.matrix(data[, vars, drop = FALSE])
-          private$.drawQQ(numData, title = "Multivariate Q-Q Plot")
-        }
-
-        TRUE
-      },
-
-      .drawQQ = function(data, title = "") {
+      # ---- Helper: compute Mahalanobis Q-Q data ----
+      .qqData = function(data, group = NULL) {
         n <- nrow(data)
         p <- ncol(data)
         S <- cov(data)
         xbar <- colMeans(data)
-        d2 <- mahalanobis(data, center = xbar, cov = S)
-        d2 <- sort(d2)
+        d2 <- sort(mahalanobis(data, center = xbar, cov = S))
         chi2q <- qchisq(ppoints(n), df = p)
+        df <- data.frame(theoretical = chi2q, observed = d2)
+        if (!is.null(group))
+          df$group <- group
+        df
+      },
 
-        plot(chi2q, d2,
-             main = title,
-             xlab = "Chi-Square Quantile",
-             ylab = "Mahalanobis Distance",
-             pch = 19, col = "steelblue")
-        abline(a = 0, b = 1, col = "red", lwd = 2)
+      # ---- Multivariate Q-Q Plot ----
+      .qqPlot = function(image, ggtheme, theme, ...) {
+        state <- image$state
+        if (is.null(state))
+          return()
+
+        plotDF <- state$qqDF
+        hasGroup <- state$hasGroup
+
+        if (hasGroup) {
+          p <- ggplot(plotDF, aes(x = theoretical, y = observed)) +
+            geom_point(color = "steelblue", size = 2) +
+            geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1) +
+            facet_wrap(~ group) +
+            labs(x = "Chi-Square Quantile", y = "Mahalanobis Distance") +
+            ggtheme
+        } else {
+          p <- ggplot(plotDF, aes(x = theoretical, y = observed)) +
+            geom_point(color = "steelblue", size = 2) +
+            geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1) +
+            labs(title = "Multivariate Q-Q Plot",
+                 x = "Chi-Square Quantile", y = "Mahalanobis Distance") +
+            ggtheme
+        }
+
+        p
       },
 
       # ---- Univariate Q-Q Plots ----
       .uniQQPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
-          return(FALSE)
+        state <- image$state
+        if (is.null(state))
+          return()
 
-        data <- private$.prepareData()
-        if (is.null(data))
-          return(FALSE)
+        data <- state$data
+        vars <- state$vars
 
-        vars <- self$options$vars
-        nv <- length(vars)
-        nc <- min(nv, 3)
-        nr <- ceiling(nv / nc)
-        par(mfrow = c(nr, nc))
+        longList <- lapply(vars, function(v) {
+          data.frame(variable = v, value = data[[v]])
+        })
+        longDF <- do.call(rbind, longList)
+        longDF$variable <- factor(longDF$variable, levels = vars)
 
-        for (v in vars) {
-          qqnorm(data[[v]], main = v, pch = 19, col = "steelblue")
-          qqline(data[[v]], col = "red", lwd = 2)
-        }
+        p <- ggplot(longDF, aes(sample = value)) +
+          stat_qq(color = "steelblue", size = 1.5) +
+          stat_qq_line(color = "red", linewidth = 1) +
+          facet_wrap(~ variable, scales = "free") +
+          labs(x = "Theoretical Quantiles", y = "Sample Quantiles") +
+          ggtheme
 
-        par(mfrow = c(1, 1))
-        TRUE
+        p
       },
 
       # ---- Box Plots ----
       .boxPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
-          return(FALSE)
+        state <- image$state
+        if (is.null(state))
+          return()
 
-        data <- private$.prepareData()
-        if (is.null(data))
-          return(FALSE)
+        data <- state$data
+        vars <- state$vars
 
-        vars <- self$options$vars
-        boxData <- data[, vars, drop = FALSE]
-        boxplot(boxData, col = "steelblue", main = "Box Plots",
-                las = 2, border = "darkblue")
-        TRUE
+        longList <- lapply(vars, function(v) {
+          data.frame(variable = v, value = data[[v]])
+        })
+        longDF <- do.call(rbind, longList)
+        longDF$variable <- factor(longDF$variable, levels = vars)
+
+        p <- ggplot(longDF, aes(x = variable, y = value)) +
+          geom_boxplot(fill = "steelblue", color = "darkblue", alpha = 0.7) +
+          labs(title = "Box Plots", x = "", y = "Value") +
+          ggtheme
+
+        p
       },
 
       # ---- Histograms ----
       .histPlots = function(image, ggtheme, theme, ...) {
-        if (length(self$options$vars) < 2)
-          return(FALSE)
+        state <- image$state
+        if (is.null(state))
+          return()
 
-        data <- private$.prepareData()
-        if (is.null(data))
-          return(FALSE)
+        data <- state$data
+        vars <- state$vars
 
-        vars <- self$options$vars
-        nv <- length(vars)
-        nc <- min(nv, 3)
-        nr <- ceiling(nv / nc)
-        par(mfrow = c(nr, nc))
+        longList <- lapply(vars, function(v) {
+          data.frame(variable = v, value = data[[v]])
+        })
+        longDF <- do.call(rbind, longList)
+        longDF$variable <- factor(longDF$variable, levels = vars)
 
-        for (v in vars) {
+        # Pre-compute normal density curves per variable
+        curveList <- lapply(vars, function(v) {
           x <- data[[v]]
-          hist(x, main = v, xlab = v, col = "steelblue",
-               border = "white", freq = FALSE, breaks = "Sturges")
-          curve(dnorm(x, mean = mean(x), sd = sd(x)),
-                add = TRUE, col = "red", lwd = 2)
-        }
+          m <- mean(x)
+          s <- sd(x)
+          xseq <- seq(min(x) - s, max(x) + s, length.out = 200)
+          data.frame(variable = v, x = xseq, density = dnorm(xseq, mean = m, sd = s))
+        })
+        curveDF <- do.call(rbind, curveList)
+        curveDF$variable <- factor(curveDF$variable, levels = vars)
 
-        par(mfrow = c(1, 1))
-        TRUE
+        p <- ggplot(longDF, aes(x = value)) +
+          geom_histogram(aes(y = after_stat(density)),
+                         fill = "steelblue", color = "white", bins = 30) +
+          geom_line(data = curveDF, aes(x = x, y = density),
+                    color = "red", linewidth = 1) +
+          facet_wrap(~ variable, scales = "free") +
+          labs(x = "Value", y = "Density") +
+          ggtheme
+
+        p
       }
     )
   )
