@@ -26,6 +26,17 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         if (hasGroup) {
           groupVar <- self$options$group
           groups <- levels(factor(self$data[[groupVar]]))
+        } else {
+          groups <- NULL
+        }
+
+        # Pre-allocate rows in stable order BEFORE running slow computations,
+        # so the table structure appears in a single step instead of growing
+        # row-by-row as each test/group completes.
+        private$.preallocateRows(groups)
+
+        if (hasGroup) {
+          groupVar <- self$options$group
           splitData <- split(
             data[, !(colnames(data) %in% groupVar), drop = FALSE],
             data[[groupVar]]
@@ -75,6 +86,66 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
           data = plotData,
           vars = vars
         ))
+      },
+
+      # ---- Pre-allocate table rows ----
+      .preallocateRows = function(groups) {
+        vars <- self$options$vars
+        hasGroup <- !is.null(groups)
+        blocks <- if (hasGroup) groups else list(NULL)
+
+        mvnLabels <- private$.mvnRowLabels()
+        uniTestName <- private$.uniTestName()
+
+        mvnTable <- self$results$mvnTable
+        uniTable <- self$results$uniTable
+        descTable <- self$results$descTable
+
+        for (g in blocks) {
+          for (lab in mvnLabels) {
+            row <- list(test = lab)
+            if (hasGroup)
+              row$group <- g
+            mvnTable$addRow(rowKey = private$.mvnKey(g, lab), values = row)
+          }
+          for (v in vars) {
+            uRow <- list(test = uniTestName, var = v)
+            if (hasGroup)
+              uRow$group <- g
+            uniTable$addRow(rowKey = private$.varKey(g, v), values = uRow)
+
+            dRow <- list(var = v)
+            if (hasGroup)
+              dRow$group <- g
+            descTable$addRow(rowKey = private$.varKey(g, v), values = dRow)
+          }
+        }
+      },
+
+      .mvnKey = function(group, label) paste0("mvn_", group, "_", label),
+      .varKey = function(group, var)   paste0("var_", group, "_", var),
+
+      .mvnRowLabels = function() {
+        switch(
+          self$options$mvnTest,
+          hz = "Henze-Zirkler",
+          mardia = c("Mardia Skewness", "Mardia Kurtosis"),
+          hw = "Henze-Wagner",
+          royston = "Royston",
+          doornik_hansen = "Doornik-Hansen",
+          energy = "E-Statistic"
+        )
+      },
+
+      .uniTestName = function() {
+        switch(
+          self$options$univariateTest,
+          AD = "Anderson-Darling",
+          SW = "Shapiro-Wilk",
+          SF = "Shapiro-Francia",
+          CVM = "Cramer-von Mises",
+          Lillie = "Lilliefors (KS)"
+        )
       },
 
       # ---- Prepare data ----
@@ -142,7 +213,7 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         # Univariate test
         uniRes <- test_univariate_normality(numData, test = self$options$univariateTest)
-        private$.fillUniTable(uniRes, group = NULL)
+        private$.fillUniTable(uniRes, vars, group = NULL)
 
         # Descriptives
         if (self$options$showDescriptives) {
@@ -165,9 +236,10 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
       # ---- Grouped analysis ----
       .runGrouped = function(splitData, groups) {
+        vars <- self$options$vars
         for (g in groups) {
           grpData <- splitData[[g]]
-          if (nrow(grpData) < 3)
+          if (is.null(grpData) || nrow(grpData) < 3)
             next
 
           # MVN test
@@ -176,12 +248,12 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
           # Univariate test
           uniRes <- test_univariate_normality(grpData, test = self$options$univariateTest)
-          private$.fillUniTable(uniRes, group = g)
+          private$.fillUniTable(uniRes, vars, group = g)
 
           # Descriptives
           if (self$options$showDescriptives) {
             descRes <- descriptives(grpData)
-            private$.fillDescTable(descRes, self$options$vars, group = g)
+            private$.fillDescTable(descRes, vars, group = g)
           }
 
           # Outliers
@@ -219,63 +291,67 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         }
       },
 
-      # ---- Fill MVN table ----
+      # ---- Fill MVN table (rows pre-allocated by rowKey) ----
       .fillMVNTable = function(res, group) {
         table <- self$results$mvnTable
         for (i in seq_len(nrow(res))) {
-          row <- list(
-            test = as.character(res$Test[i]),
-            statistic = res$Statistic[i],
-            pvalue = res$p.value[i],
-            result = ifelse(res$p.value[i] > 0.05, "Normal", "Not normal")
+          label <- as.character(res$Test[i])
+          table$setRow(
+            rowKey = private$.mvnKey(group, label),
+            values = list(
+              statistic = res$Statistic[i],
+              pvalue = res$p.value[i],
+              result = ifelse(res$p.value[i] > 0.05, "Normal", "Not normal")
+            )
           )
-          if (!is.null(group))
-            row$group <- group
-          table$addRow(rowKey = paste0(group, "_", i), values = row)
         }
       },
 
       # ---- Fill univariate table ----
-      .fillUniTable = function(res, group) {
+      .fillUniTable = function(res, vars, group) {
         table <- self$results$uniTable
-        for (i in seq_len(nrow(res))) {
-          row <- list(
-            test = as.character(res$Test[i]),
-            var = as.character(res$Variable[i]),
-            statistic = res$Statistic[i],
-            pvalue = res$p.value[i],
-            normality = ifelse(res$p.value[i] > 0.05, "Normal", "Not normal")
+        idx <- match(vars, as.character(res$Variable))
+        for (i in seq_along(vars)) {
+          j <- idx[i]
+          if (is.na(j))
+            next
+          table$setRow(
+            rowKey = private$.varKey(group, vars[i]),
+            values = list(
+              statistic = res$Statistic[j],
+              pvalue = res$p.value[j],
+              normality = ifelse(res$p.value[j] > 0.05, "Normal", "Not normal")
+            )
           )
-          if (!is.null(group))
-            row$group <- group
-          table$addRow(rowKey = paste0(group, "_uni_", i), values = row)
         }
       },
 
       # ---- Fill descriptives table ----
       .fillDescTable = function(res, vars, group) {
         table <- self$results$descTable
-        for (i in seq_len(nrow(res))) {
-          row <- list(
-            var = vars[i],
-            n = res$n[i],
-            mean = res$Mean[i],
-            sd = res$Std.Dev[i],
-            median = res$Median[i],
-            min = res$Min[i],
-            max = res$Max[i],
-            q25 = res$`25th`[i],
-            q75 = res$`75th`[i],
-            skew = res$Skew[i],
-            kurtosis = res$Kurtosis[i]
+        # res rows correspond to vars in order
+        for (i in seq_along(vars)) {
+          if (i > nrow(res))
+            next
+          table$setRow(
+            rowKey = private$.varKey(group, vars[i]),
+            values = list(
+              n = res$n[i],
+              mean = res$Mean[i],
+              sd = res$Std.Dev[i],
+              median = res$Median[i],
+              min = res$Min[i],
+              max = res$Max[i],
+              q25 = res$`25th`[i],
+              q75 = res$`75th`[i],
+              skew = res$Skew[i],
+              kurtosis = res$Kurtosis[i]
+            )
           )
-          if (!is.null(group))
-            row$group <- group
-          table$addRow(rowKey = paste0(group, "_desc_", i), values = row)
         }
       },
 
-      # ---- Fill outlier table ----
+      # ---- Fill outlier table (dynamic — count is data-driven) ----
       .fillOutlierTable = function(outliers, group) {
         table <- self$results$outlierTable
         if (nrow(outliers) == 0)

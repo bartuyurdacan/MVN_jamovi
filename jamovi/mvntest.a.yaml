@@ -10,7 +10,7 @@ options:
       type: Data
 
     - name: vars
-      title: Variables
+      title: 'Variables (min: 2)'
       type: Variables
       suggested:
         - continuous

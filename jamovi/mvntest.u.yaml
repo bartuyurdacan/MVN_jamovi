@@ -9,7 +9,7 @@ children:
     stretchFactor: 1
     children:
       - type: TargetLayoutBox
-        label: Variables
+        label: 'Variables (min: 2)'
         children:
           - type: VariablesListBox
             name: vars
