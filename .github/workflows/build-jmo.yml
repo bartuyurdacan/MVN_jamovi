@@ -80,8 +80,8 @@ jobs:
             any::zip
           dependencies: '"hard"'
 
-      - name: Install jmvtools
-        run: Rscript -e 'install.packages("jmvtools", repos = c("https://repo.jamovi.org", getOption("repos")))'
+      - name: Install jmvtools and zip
+        run: Rscript -e 'install.packages(c("jmvtools","zip"), repos = c("https://repo.jamovi.org", getOption("repos")))'
 
       - name: Read package version
         id: ver
@@ -94,9 +94,28 @@ jobs:
       - name: Build .jmo
         shell: Rscript {0}
         run: |
-          out <- sprintf("MVN_%s-%s.jmo", "${{ steps.ver.outputs.version }}", "${{ matrix.config.suffix }}")
-          jmvtools::install(".", to = out)
-          if (!file.exists(out)) stop("build did not produce ", out)
+          version <- "${{ steps.ver.outputs.version }}"
+          suffix  <- "${{ matrix.config.suffix }}"
+          out     <- file.path(getwd(), sprintf("MVN_%s-%s.jmo", version, suffix))
+
+          home    <- normalizePath(file.path(getwd(), "_jamovi_home"), mustWork = FALSE)
+          unlink(home, recursive = TRUE, force = TRUE)
+          modroot <- file.path(home, "Resources", "jamovi", "modules")
+          dir.create(modroot, recursive = TRUE, showWarnings = FALSE)
+          dir.create(file.path(home, "Resources", "lib"), recursive = TRUE, showWarnings = FALSE)
+          Sys.setenv(JAMOVI_HOME = home)
+
+          jmvtools::install(".")
+
+          moddir <- file.path(modroot, "MVN")
+          if (!dir.exists(moddir)) {
+            cat("modules dir contents:\n"); print(list.files(modroot, recursive = TRUE))
+            stop("jmvtools::install did not produce MVN module dir")
+          }
+
+          if (file.exists(out)) file.remove(out)
+          zip::zip(out, files = "MVN", root = modroot)
+          if (!file.exists(out)) stop("zip step did not produce ", out)
           cat("built:", out, "size:", file.info(out)$size, "bytes\n")
 
       - name: Upload artifact
