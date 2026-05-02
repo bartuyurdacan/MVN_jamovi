@@ -1,7 +1,7 @@
 ---
 title: MVN - Multivariate Normality Tests
 name: MVN
-version: 0.1.0
+version: 0.1.1
 jms: '1.0'
 authors:
   - Fikret Bartu Yurdacan
@@ -9,7 +9,7 @@ authors:
   - Dincer Goksuluk
   - Gokmen Zararsiz
 maintainer: Fikret Bartu Yurdacan <fbartuyurdacan@trakya.edu.tr>
-date: '2026-03-09'
+date: '2026-05-02'
 type: R
 description: >
   A comprehensive suite for assessing multivariate normality using six

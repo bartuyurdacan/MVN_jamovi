@@ -1,7 +1,7 @@
 Package: MVN
 Type: Package
 Title: Multivariate Normality Tests
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     c(
       person(given = "Fikret Bartu", family = "Yurdacan", role = c("aut", "cre"),
