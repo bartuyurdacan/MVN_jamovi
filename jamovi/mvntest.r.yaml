@@ -13,12 +13,6 @@ items:
         - vars
         - group
         - mvnTest
-        - transform
-        - powerFamily
-        - scale
-        - impute
-        - bootstrap
-        - nBoot
       columns:
         - name: group
           title: Group
@@ -48,10 +42,6 @@ items:
         - vars
         - group
         - univariateTest
-        - transform
-        - powerFamily
-        - scale
-        - impute
       columns:
         - name: group
           title: Group
@@ -83,10 +73,6 @@ items:
       clearWith:
         - vars
         - group
-        - transform
-        - powerFamily
-        - scale
-        - impute
       columns:
         - name: group
           title: Group
