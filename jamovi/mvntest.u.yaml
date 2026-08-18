@@ -2,7 +2,7 @@ title: Multivariate Normality Test
 name: mvntest
 jus: '3.0'
 stage: 0
-compilerMode: aggressive
+compilerMode: tame
 children:
   - type: VariableSupplier
     persistentItems: false
@@ -23,12 +23,10 @@ children:
             isTarget: true
   - type: LayoutBox
     margin: large
+    style: inline
     children:
       - type: ComboBox
         name: mvnTest
-  - type: LayoutBox
-    margin: large
-    children:
       - type: ComboBox
         name: univariateTest
   - type: LayoutBox
@@ -36,49 +34,42 @@ children:
     children:
       - type: CheckBox
         name: showDescriptives
-  - type: LayoutBox
+  - type: CollapseBox
+    label: Outliers
+    collapsed: true
     margin: large
     children:
       - type: ComboBox
         name: outlierMethod
-  - type: LayoutBox
-    margin: large
-    children:
       - type: TextBox
         name: outlierAlpha
         format: number
-  - type: LayoutBox
+  - type: CollapseBox
+    label: Data Preparation
+    collapsed: true
     margin: large
     children:
       - type: ComboBox
         name: transform
-  - type: LayoutBox
-    margin: large
-    children:
       - type: ComboBox
         name: powerFamily
-  - type: LayoutBox
-    margin: large
-    children:
       - type: CheckBox
         name: scale
-  - type: LayoutBox
-    margin: large
-    children:
       - type: ComboBox
         name: impute
-  - type: LayoutBox
+  - type: CollapseBox
+    label: Bootstrap
+    collapsed: true
     margin: large
     children:
       - type: CheckBox
         name: bootstrap
-  - type: LayoutBox
-    margin: large
-    children:
       - type: TextBox
         name: nBoot
         format: number
-  - type: LayoutBox
+  - type: CollapseBox
+    label: Plots
+    collapsed: true
     margin: large
     children:
       - type: CheckBox

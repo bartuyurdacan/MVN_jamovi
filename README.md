@@ -92,6 +92,17 @@ For grouped analysis:
 mvn(data = iris, subset = "Species", mvn_test = "hz")
 ```
 
+## jamovi Module
+
+The MVN jamovi module provides multivariate and univariate normality tests,
+descriptive statistics, multivariate outlier detection, transformations,
+imputation, bootstrap p-values, and diagnostic plots through the jamovi user
+interface.
+
+Select at least two continuous variables in **Analyses > MVN > Multivariate
+Normality Test**. An optional grouping variable can be used to run the
+assessment separately for each group.
+
 
 ## Shiny Web App
 
@@ -117,6 +128,14 @@ Please cite MVN in your publications using:
 
 Korkmaz S, Goksuluk D, Zararsiz G. MVN: An R Package for Assessing Multivariate Normality. The R Journal. 2014; 6(2):151-162.
 https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf
+
+The jamovi project (2025). *jamovi* (Version 2.7) [Computer Software].
+Retrieved from https://www.jamovi.org.
+
+R Core Team (2025). *R: A Language and Environment for Statistical
+Computing* (Version 4.5) [Computer software]. Retrieved from
+https://cran.r-project.org. R packages retrieved from CRAN snapshot
+2025-05-25.
 
 
 ## License

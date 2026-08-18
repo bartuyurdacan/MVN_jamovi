@@ -226,13 +226,7 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 clearWith=list(
                     "vars",
                     "group",
-                    "mvnTest",
-                    "transform",
-                    "powerFamily",
-                    "scale",
-                    "impute",
-                    "bootstrap",
-                    "nBoot"),
+                    "mvnTest"),
                 columns=list(
                     list(
                         `name`="group", 
@@ -266,11 +260,7 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 clearWith=list(
                     "vars",
                     "group",
-                    "univariateTest",
-                    "transform",
-                    "powerFamily",
-                    "scale",
-                    "impute"),
+                    "univariateTest"),
                 columns=list(
                     list(
                         `name`="group", 
@@ -307,11 +297,7 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 visible="(showDescriptives)",
                 clearWith=list(
                     "vars",
-                    "group",
-                    "transform",
-                    "powerFamily",
-                    "scale",
-                    "impute"),
+                    "group"),
                 columns=list(
                     list(
                         `name`="group", 
