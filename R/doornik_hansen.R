@@ -174,7 +174,7 @@ doornik_hansen <- function(data, bootstrap = FALSE, B = 1000, cores = 1) {
     
     if (n_boot_used > 0) {
       # Parametric-bootstrap p-value
-      p_value <- mean(boot_vec >= E_obs)
+      p_value <- (1 + sum(boot_vec >= E_obs)) / (length(boot_vec) + 1)
       method  <- "parametric bootstrap"
     } else {
       p_value <- NA_real_

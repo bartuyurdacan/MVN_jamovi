@@ -155,7 +155,7 @@ hz <- function(data, use_population = TRUE, tol = 1e-25,
 
     if (length(boot_vec) > 0) {
       # 8) Now compute the parametric‐bootstrap p-value:
-      p_value <- mean(boot_vec >= hz_stat)
+      p_value <- (1 + sum(boot_vec >= hz_stat)) / (length(boot_vec) + 1)
     } else {
       p_value <- NA_real_
     }

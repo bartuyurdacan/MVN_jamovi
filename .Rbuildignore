@@ -1,5 +1,9 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.Rhistory$
+^MD5$
 ^doc$
 ^Meta$
 ^LICENSE\.md$
+^MVN_.*\\.tar\\.gz$
+^MVN\\.Rcheck$

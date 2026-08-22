@@ -8,7 +8,7 @@ impute_missing(
   data,
   method = c("mean", "median", "mice"),
   m = 5,
-  seed = 123,
+  seed = NULL,
   ...
 )
 }
@@ -19,7 +19,7 @@ impute_missing(
 
 \item{m}{Integer; number of multiple imputations when \code{method = "mice"}. Default: 5.}
 
-\item{seed}{Integer; random seed for \code{mice} imputation. Default: 123.}
+\item{seed}{Optional integer seed for reproducible MICE imputation. The global RNG state is restored after use.}
 
 \item{...}{Additional arguments passed to \code{mice::mice} when \code{method = "mice"}.}
 }

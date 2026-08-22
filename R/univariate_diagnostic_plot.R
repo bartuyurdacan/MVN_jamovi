@@ -24,14 +24,11 @@ utils::globalVariables(c(
 #' }
 #' @importFrom graphics hist curve boxplot pairs par
 #' @importFrom stats complete.cases dnorm sd qqnorm qqline quantile
-#' @importFrom ggplot2 ggplot aes geom_histogram geom_line geom_point geom_boxplot
-#'             facet_wrap facet_grid labs theme_minimal theme element_text element_blank
-#'             element_rect unit margin geom_abline after_stat vars ggtitle
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_line geom_point geom_boxplot facet_wrap facet_grid labs theme_minimal theme element_text element_blank element_rect unit margin geom_abline after_stat vars ggtitle
 #' @importFrom tidyr pivot_longer unnest
 #' @importFrom dplyr group_by summarise rowwise mutate reframe ungroup left_join select
 #' @importFrom tibble tibble
 #' @importFrom purrr map_dfr
-#' @importFrom plotly ggplotly
 #' @export
 
 univariate_diagnostic_plot <- function(data,
@@ -311,8 +308,10 @@ univariate_diagnostic_plot <- function(data,
   }
   
   if (interactive) {
-    p <- ggplotly(p)
-  } else{
+    if (!requireNamespace("plotly", quietly = TRUE))
+      stop("Package 'plotly' is required for interactive diagnostic plots.")
+    p <- plotly::ggplotly(p)
+  } else {
     p
   }
   

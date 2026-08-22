@@ -2,7 +2,7 @@
 name: mvntest
 title: Multivariate Normality Test
 menuGroup: MVN
-version: '6.3.0'
+version: '1.0.0'
 jas: '1.2'
 
 options:
@@ -69,7 +69,7 @@ options:
         The univariate normality test to apply to each variable.
 
     - name: showDescriptives
-      title: Descriptive Statistics
+      title: Descriptive statistics
       type: Bool
       default: true
       description: >
@@ -132,7 +132,7 @@ options:
         Power transformation family to apply before analysis.
 
     - name: scale
-      title: Standardize Data
+      title: Standardize data
       type: Bool
       default: false
       description: >
@@ -159,33 +159,34 @@ options:
       type: Bool
       default: false
       description: >
-        Use bootstrap resampling for p-value estimation.
+        Use bootstrap resampling for p-value estimation. The Energy test always
+        uses parametric bootstrap, regardless of this setting.
 
     - name: nBoot
-      title: Number of Bootstrap Replicates
+      title: Number of bootstrap replicates
       type: Integer
       min: 100
-      max: 100000
+      max: 10000
       default: 1000
       description: >
-        Number of bootstrap replicates.
+        Number of bootstrap replicates. This value is also used by the Energy test.
 
     - name: showQQPlot
-      title: Multivariate Q-Q Plot
+      title: Multivariate Q-Q plot
       type: Bool
       default: false
       description: >
         Show chi-square Q-Q plot for multivariate normality assessment.
 
     - name: showUniPlots
-      title: Univariate Diagnostic Plots
+      title: Univariate diagnostic plots
       type: Bool
       default: false
       description: >
         Show univariate Q-Q plots for each variable.
 
     - name: showBoxPlots
-      title: Box Plots
+      title: Box plots
       type: Bool
       default: false
       description: >

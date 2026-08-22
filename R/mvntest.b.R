@@ -1,8 +1,8 @@
 
 #' @importFrom jmvcore .
+#' @importFrom R6 R6Class
 #' @importFrom stats mahalanobis qchisq cov dnorm sd ppoints
-#' @importFrom ggplot2 ggplot aes geom_point geom_abline geom_line labs
-#'   facet_wrap stat_qq stat_qq_line geom_histogram after_stat geom_boxplot
+#' @importFrom ggplot2 ggplot aes geom_point geom_abline geom_line labs facet_wrap stat_qq stat_qq_line geom_histogram after_stat geom_boxplot
 
 mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
   R6::R6Class(
@@ -10,82 +10,148 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
     inherit = mvntestBase,
     private = list(
 
+      # ---- Initialise result structure ----
+      .init = function() {
+        if (is.null(self$options$vars) || length(self$options$vars) < 2)
+          return()
+
+        private$.preallocateRows(private$.rowGroups())
+        if ("groupWarnings" %in% self$results$itemNames)
+          self$results$remove("groupWarnings")
+      },
+
       # ---- Main analysis ----
       .run = function() {
 
-        if (is.null(self$options$vars) || length(self$options$vars) < 2) {
+        if (is.null(self$options$vars) || length(self$options$vars) < 2)
           return()
-        }
 
         data <- private$.prepareData()
-        if (is.null(data))
+        vars <- self$options$vars
+        hasGroup <- !is.null(self$options$group)
+        messages <- character()
+
+        if (hasGroup) {
+          groupVar <- self$options$group
+          groupFactor <- droplevels(factor(data[[groupVar]]))
+          groups <- levels(groupFactor)
+          splitData <- split(data[, vars, drop = FALSE], groupFactor, drop = TRUE)
+          messages <- c(messages, private$.runGrouped(splitData, groups))
+        } else {
+          if (nrow(data) <= length(vars)) {
+            jmvcore::reject(sprintf(
+              "This analysis requires more complete cases than variables (%d required; %d found).",
+              length(vars) + 1L,
+              nrow(data)
+            ))
+          }
+          private$.runSingle(data)
+          splitData <- NULL
+        }
+
+        private$.checkpoint()
+
+        # Store plot data only for plots the user requested.
+        if (self$options$showQQPlot) {
+          if (hasGroup) {
+            qqDFs <- lapply(names(splitData), function(g) {
+              grpData <- as.matrix(splitData[[g]])
+              if (nrow(grpData) <= ncol(grpData))
+                return(NULL)
+
+              tryCatch(
+                private$.qqData(grpData, group = g),
+                error = function(e) {
+                  messages <<- c(messages, sprintf(
+                    "Multivariate Q-Q plot was skipped for group '%s': %s",
+                    g,
+                    conditionMessage(e)
+                  ))
+                  NULL
+                }
+              )
+            })
+            qqDFs <- Filter(Negate(is.null), qqDFs)
+            if (length(qqDFs) > 0) {
+              self$results$qqPlot$setState(list(
+                qqDF = do.call(rbind, qqDFs),
+                hasGroup = TRUE
+              ))
+            }
+          } else {
+            qqDF <- tryCatch(
+              private$.qqData(as.matrix(data[, vars, drop = FALSE])),
+              error = function(e) {
+                messages <<- c(messages, sprintf(
+                  "Multivariate Q-Q plot could not be produced: %s",
+                  conditionMessage(e)
+                ))
+                NULL
+              }
+            )
+            if (!is.null(qqDF)) {
+              self$results$qqPlot$setState(list(
+                qqDF = qqDF,
+                hasGroup = FALSE
+              ))
+            }
+          }
+        }
+
+        if (self$options$showUniPlots ||
+            self$options$showBoxPlots ||
+            self$options$showHistograms) {
+          plotState <- list(
+            data = as.data.frame(data[, vars, drop = FALSE]),
+            vars = vars
+          )
+          if (self$options$showUniPlots)
+            self$results$uniPlots$setState(plotState)
+          if (self$options$showBoxPlots)
+            self$results$boxPlots$setState(plotState)
+          if (self$options$showHistograms)
+            self$results$histPlots$setState(plotState)
+        }
+
+        private$.setNotices(messages)
+      },
+
+      .rowGroups = function() {
+        groupVar <- self$options$group
+        if (is.null(groupVar))
+          return(NULL)
+
+        cols <- c(self$options$vars, groupVar)
+        data <- jmvcore::select(self$data, cols)
+        if (self$options$impute == "none") {
+          data <- data[complete.cases(data), , drop = FALSE]
+        } else {
+          data <- data[!is.na(data[[groupVar]]), , drop = FALSE]
+        }
+
+        levels(droplevels(factor(data[[groupVar]])))
+      },
+
+      .setNotices = function(messages) {
+        noticeName <- "groupWarnings"
+        if (noticeName %in% self$results$itemNames)
+          self$results$remove(noticeName)
+
+        messages <- unique(messages[nzchar(messages)])
+        if (length(messages) == 0)
           return()
 
-        hasGroup <- !is.null(self$options$group)
-
-        if (hasGroup) {
-          groupVar <- self$options$group
-          groups <- levels(factor(self$data[[groupVar]]))
-        } else {
-          groups <- NULL
-        }
-
-        # Pre-allocate rows in stable order BEFORE running slow computations,
-        # so the table structure appears in a single step instead of growing
-        # row-by-row as each test/group completes.
-        private$.preallocateRows(groups)
-
-        if (hasGroup) {
-          groupVar <- self$options$group
-          splitData <- split(
-            data[, !(colnames(data) %in% groupVar), drop = FALSE],
-            data[[groupVar]]
-          )
-          private$.runGrouped(splitData, groups)
-        } else {
-          private$.runSingle(data)
-        }
-
-        # Store plot data in image state for deferred rendering
-        vars <- self$options$vars
-        plotData <- as.data.frame(data[, vars, drop = FALSE])
-
-        # Multivariate Q-Q data
-        if (hasGroup) {
-          groupVar <- self$options$group
-          splitNum <- split(
-            data[, !(colnames(data) %in% groupVar), drop = FALSE],
-            data[[groupVar]]
-          )
-          qqDFs <- lapply(names(splitNum), function(g) {
-            grpData <- as.matrix(splitNum[[g]])
-            private$.qqData(grpData, group = g)
-          })
-          qqDF <- do.call(rbind, qqDFs)
-        } else {
-          numData <- as.matrix(plotData)
-          qqDF <- private$.qqData(numData)
-        }
-
-        self$results$qqPlot$setState(list(
-          qqDF = qqDF,
-          hasGroup = hasGroup
-        ))
-
-        self$results$uniPlots$setState(list(
-          data = plotData,
-          vars = vars
-        ))
-
-        self$results$boxPlots$setState(list(
-          data = plotData,
-          vars = vars
-        ))
-
-        self$results$histPlots$setState(list(
-          data = plotData,
-          vars = vars
-        ))
+        notice <- jmvcore::Notice$new(
+          options = self$options,
+          name = noticeName,
+          visible = TRUE,
+          clearWith = "*"
+        )
+        notice$set(
+          jmvcore::NoticeType$WARNING,
+          paste(messages, collapse = "\n")
+        )
+        self$results$insert(1, notice)
       },
 
       # ---- Pre-allocate table rows ----
@@ -143,11 +209,12 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
           AD = "Anderson-Darling",
           SW = "Shapiro-Wilk",
           SF = "Shapiro-Francia",
-          CVM = "Cramer-von Mises",
-          Lillie = "Lilliefors (KS)"
+          CVM = "Cram\u00e9r-von Mises",
+          Lillie = "Lilliefors"
         )
       },
 
+      # ---- Prepare data ----
       # ---- Prepare data ----
       .prepareData = function() {
         vars <- self$options$vars
@@ -159,69 +226,102 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         data <- jmvcore::select(self$data, cols)
 
-        # Convert numeric columns
-        for (v in vars) {
+        for (v in vars)
           data[[v]] <- jmvcore::toNumeric(data[[v]])
-        }
 
-        # Handle missing data
         if (self$options$impute == "none") {
-          data <- data[complete.cases(data), ]
+          data <- data[complete.cases(data), , drop = FALSE]
         } else {
+          if (self$options$impute == "mice" &&
+              !requireNamespace("mice", quietly = TRUE)) {
+            jmvcore::reject(
+              "MICE imputation requires the optional 'mice' R package."
+            )
+          }
+
           numData <- data[, vars, drop = FALSE]
-          numData <- impute_missing(numData, method = self$options$impute)
+          numData <- tryCatch(
+            impute_missing(numData, method = self$options$impute),
+            error = function(e) jmvcore::reject(sprintf(
+              "Missing-data imputation failed: %s",
+              conditionMessage(e)
+            ))
+          )
           data[, vars] <- numData
+          if (!is.null(groupVar))
+            data <- data[!is.na(data[[groupVar]]), , drop = FALSE]
         }
 
-        if (nrow(data) < 3)
-          return(NULL)
+        if (nrow(data) < 3) {
+          jmvcore::reject(sprintf(
+            "This analysis requires at least 3 complete cases (%d found).",
+            nrow(data)
+          ))
+        }
 
-        # Scaling
-        if (self$options$scale) {
+        if (self$options$scale)
           data[, vars] <- scale(data[, vars])
-        }
 
-        # Marginal transforms
         if (self$options$transform == "log") {
           data[, vars] <- apply(data[, vars, drop = FALSE], 2, log)
         } else if (self$options$transform == "sqrt") {
           data[, vars] <- apply(data[, vars, drop = FALSE], 2, sqrt)
         } else if (self$options$transform == "square") {
-          data[, vars] <- apply(data[, vars, drop = FALSE], 2, function(x) x^2)
+          data[, vars] <- apply(
+            data[, vars, drop = FALSE],
+            2,
+            function(x) x^2
+          )
         }
 
-        # Power transformation
         if (self$options$powerFamily != "none") {
           numData <- data[, vars, drop = FALSE]
-          result <- power_transform(numData,
-                                    family = self$options$powerFamily,
-                                    type = "optimal")
+          result <- power_transform(
+            numData,
+            family = self$options$powerFamily,
+            type = "optimal"
+          )
           data[, vars] <- result$data
+        }
+
+        if (any(!is.finite(as.matrix(data[, vars, drop = FALSE])))) {
+          jmvcore::reject(
+            "The selected transformation produced non-finite values. Choose another transformation or adjust the data."
+          )
         }
 
         data
       },
 
       # ---- Single group ----
+      # ---- Single group ----
       .runSingle = function(data) {
         vars <- self$options$vars
         numData <- data[, vars, drop = FALSE]
 
-        # MVN test
-        mvnRes <- private$.doMVNTest(numData)
+        mvnRes <- tryCatch(
+          private$.doMVNTest(numData),
+          error = function(e) jmvcore::reject(sprintf(
+            "The multivariate normality test could not be computed: %s",
+            conditionMessage(e)
+          ))
+        )
         private$.fillMVNTable(mvnRes, group = NULL)
 
-        # Univariate test
-        uniRes <- test_univariate_normality(numData, test = self$options$univariateTest)
+        private$.checkpoint()
+        uniRes <- test_univariate_normality(
+          numData,
+          test = self$options$univariateTest
+        )
         private$.fillUniTable(uniRes, vars, group = NULL)
 
-        # Descriptives
+        private$.checkpoint()
         if (self$options$showDescriptives) {
           descRes <- descriptives(numData)
           private$.fillDescTable(descRes, vars, group = NULL)
         }
 
-        # Outliers
+        private$.checkpoint()
         if (self$options$outlierMethod != "none") {
           outlierRes <- mv_outlier(
             numData,
@@ -229,7 +329,11 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
             alpha = self$options$outlierAlpha,
             method = self$options$outlierMethod
           )
-          outliers <- outlierRes$outlier[outlierRes$outlier$Outlier == "TRUE", ]
+          outliers <- outlierRes$outlier[
+            outlierRes$outlier$Outlier == "TRUE",
+            ,
+            drop = FALSE
+          ]
           private$.fillOutlierTable(outliers, group = NULL)
         }
       },
@@ -237,37 +341,88 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
       # ---- Grouped analysis ----
       .runGrouped = function(splitData, groups) {
         vars <- self$options$vars
+        messages <- character()
+
         for (g in groups) {
+          private$.checkpoint()
           grpData <- splitData[[g]]
-          if (is.null(grpData) || nrow(grpData) < 3)
+
+          found <- if (is.null(grpData)) 0L else nrow(grpData)
+          required <- if (is.null(grpData)) length(vars) + 1L else ncol(grpData) + 1L
+          if (is.null(grpData) || found < required) {
+            messages <- c(messages, sprintf(
+              "Group '%s' was skipped: at least %d complete cases are required (%d found).",
+              g,
+              required,
+              found
+            ))
             next
-
-          # MVN test
-          mvnRes <- private$.doMVNTest(grpData)
-          private$.fillMVNTable(mvnRes, group = g)
-
-          # Univariate test
-          uniRes <- test_univariate_normality(grpData, test = self$options$univariateTest)
-          private$.fillUniTable(uniRes, vars, group = g)
-
-          # Descriptives
-          if (self$options$showDescriptives) {
-            descRes <- descriptives(grpData)
-            private$.fillDescTable(descRes, vars, group = g)
           }
 
-          # Outliers
-          if (self$options$outlierMethod != "none") {
-            outlierRes <- mv_outlier(
-              grpData,
-              qqplot = FALSE,
-              alpha = self$options$outlierAlpha,
-              method = self$options$outlierMethod
+          captureError <- function(label, expression) {
+            tryCatch(
+              {
+                force(expression)
+                NULL
+              },
+              error = function(e) sprintf(
+                "Group '%s': %s failed: %s",
+                g,
+                label,
+                conditionMessage(e)
+              )
             )
-            outliers <- outlierRes$outlier[outlierRes$outlier$Outlier == "TRUE", ]
-            private$.fillOutlierTable(outliers, group = g)
+          }
+
+          message <- captureError("multivariate normality test", {
+            mvnRes <- private$.doMVNTest(grpData)
+            private$.fillMVNTable(mvnRes, group = g)
+          })
+          if (!is.null(message))
+            messages <- c(messages, message)
+
+          private$.checkpoint()
+          message <- captureError("univariate normality test", {
+            uniRes <- test_univariate_normality(
+              grpData,
+              test = self$options$univariateTest
+            )
+            private$.fillUniTable(uniRes, vars, group = g)
+          })
+          if (!is.null(message))
+            messages <- c(messages, message)
+
+          if (self$options$showDescriptives) {
+            message <- captureError("descriptive statistics", {
+              descRes <- descriptives(grpData)
+              private$.fillDescTable(descRes, vars, group = g)
+            })
+            if (!is.null(message))
+              messages <- c(messages, message)
+          }
+
+          private$.checkpoint()
+          if (self$options$outlierMethod != "none") {
+            message <- captureError("outlier detection", {
+              outlierRes <- mv_outlier(
+                grpData,
+                qqplot = FALSE,
+                alpha = self$options$outlierAlpha,
+                method = self$options$outlierMethod
+              )
+              outliers <- outlierRes$outlier[
+                outlierRes$outlier$Outlier == "TRUE",
+                ,
+                drop = FALSE
+              ]
+              private$.fillOutlierTable(outliers, group = g)
+            })
+            if (!is.null(message))
+              messages <- c(messages, message)
           }
         }
+
+        messages
       },
 
       # ---- Run MVN test ----
@@ -381,6 +536,18 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         df
       },
 
+      .themeValue = function(theme, component, index, fallback) {
+        values <- NULL
+        if (!is.null(theme) && !is.null(theme[[component]]))
+          values <- as.character(unlist(theme[[component]], use.names = FALSE))
+        values <- values[!is.na(values) & nzchar(values)]
+
+        if (length(values) == 0)
+          return(fallback)
+
+        values[((index - 1L) %% length(values)) + 1L]
+      },
+
       # ---- Multivariate Q-Q Plot ----
       .qqPlot = function(image, ggtheme, theme, ...) {
         state <- image$state
@@ -389,24 +556,23 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         plotDF <- state$qqDF
         hasGroup <- state$hasGroup
+        pointColor <- private$.themeValue(theme, "color", 1, "#4C78A8")
+        lineColor <- private$.themeValue(theme, "color", 2, "#E45756")
 
-        if (hasGroup) {
-          p <- ggplot(plotDF, aes(x = theoretical, y = observed)) +
-            geom_point(color = "steelblue", size = 2) +
-            geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1) +
-            facet_wrap(~ group) +
-            labs(x = "Chi-Square Quantile", y = "Mahalanobis Distance") +
-            ggtheme
-        } else {
-          p <- ggplot(plotDF, aes(x = theoretical, y = observed)) +
-            geom_point(color = "steelblue", size = 2) +
-            geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1) +
-            labs(title = "Multivariate Q-Q Plot",
-                 x = "Chi-Square Quantile", y = "Mahalanobis Distance") +
-            ggtheme
-        }
+        plot <- ggplot(plotDF, aes(x = theoretical, y = observed)) +
+          geom_point(color = pointColor, size = 2) +
+          geom_abline(
+            intercept = 0,
+            slope = 1,
+            color = lineColor,
+            linewidth = 1
+          ) +
+          labs(x = "Chi-Square Quantile", y = "Mahalanobis Distance")
 
-        p
+        if (hasGroup)
+          plot <- plot + facet_wrap(~ group)
+
+        plot + ggtheme
       },
 
       # ---- Univariate Q-Q Plots ----
@@ -417,6 +583,8 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         data <- state$data
         vars <- state$vars
+        pointColor <- private$.themeValue(theme, "color", 1, "#4C78A8")
+        lineColor <- private$.themeValue(theme, "color", 2, "#E45756")
 
         longList <- lapply(vars, function(v) {
           data.frame(variable = v, value = data[[v]])
@@ -424,14 +592,12 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         longDF <- do.call(rbind, longList)
         longDF$variable <- factor(longDF$variable, levels = vars)
 
-        p <- ggplot(longDF, aes(sample = value)) +
-          stat_qq(color = "steelblue", size = 1.5) +
-          stat_qq_line(color = "red", linewidth = 1) +
+        ggplot(longDF, aes(sample = value)) +
+          stat_qq(color = pointColor, size = 1.5) +
+          stat_qq_line(color = lineColor, linewidth = 1) +
           facet_wrap(~ variable, scales = "free") +
           labs(x = "Theoretical Quantiles", y = "Sample Quantiles") +
           ggtheme
-
-        p
       },
 
       # ---- Box Plots ----
@@ -442,6 +608,8 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         data <- state$data
         vars <- state$vars
+        fillColor <- private$.themeValue(theme, "fill", 1, "#4C78A8")
+        lineColor <- private$.themeValue(theme, "color", 1, "#2F4B7C")
 
         longList <- lapply(vars, function(v) {
           data.frame(variable = v, value = data[[v]])
@@ -449,12 +617,14 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         longDF <- do.call(rbind, longList)
         longDF$variable <- factor(longDF$variable, levels = vars)
 
-        p <- ggplot(longDF, aes(x = variable, y = value)) +
-          geom_boxplot(fill = "steelblue", color = "darkblue", alpha = 0.7) +
-          labs(title = "Box Plots", x = "", y = "Value") +
+        ggplot(longDF, aes(x = variable, y = value)) +
+          geom_boxplot(
+            fill = fillColor,
+            color = lineColor,
+            alpha = 0.7
+          ) +
+          labs(x = "", y = "Value") +
           ggtheme
-
-        p
       },
 
       # ---- Histograms ----
@@ -465,6 +635,9 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
 
         data <- state$data
         vars <- state$vars
+        fillColor <- private$.themeValue(theme, "fill", 1, "#4C78A8")
+        lineColor <- private$.themeValue(theme, "color", 2, "#E45756")
+        borderColor <- private$.themeValue(theme, "background", 1, "white")
 
         longList <- lapply(vars, function(v) {
           data.frame(variable = v, value = data[[v]])
@@ -472,27 +645,36 @@ mvntestClass <- if (requireNamespace("jmvcore", quietly = TRUE)) {
         longDF <- do.call(rbind, longList)
         longDF$variable <- factor(longDF$variable, levels = vars)
 
-        # Pre-compute normal density curves per variable
         curveList <- lapply(vars, function(v) {
           x <- data[[v]]
           m <- mean(x)
           s <- sd(x)
           xseq <- seq(min(x) - s, max(x) + s, length.out = 200)
-          data.frame(variable = v, x = xseq, density = dnorm(xseq, mean = m, sd = s))
+          data.frame(
+            variable = v,
+            x = xseq,
+            density = dnorm(xseq, mean = m, sd = s)
+          )
         })
         curveDF <- do.call(rbind, curveList)
         curveDF$variable <- factor(curveDF$variable, levels = vars)
 
-        p <- ggplot(longDF, aes(x = value)) +
-          geom_histogram(aes(y = after_stat(density)),
-                         fill = "steelblue", color = "white", bins = 30) +
-          geom_line(data = curveDF, aes(x = x, y = density),
-                    color = "red", linewidth = 1) +
+        ggplot(longDF, aes(x = value)) +
+          geom_histogram(
+            aes(y = after_stat(density)),
+            fill = fillColor,
+            color = borderColor,
+            bins = 30
+          ) +
+          geom_line(
+            data = curveDF,
+            aes(x = x, y = density),
+            color = lineColor,
+            linewidth = 1
+          ) +
           facet_wrap(~ variable, scales = "free") +
           labs(x = "Value", y = "Density") +
           ggtheme
-
-        p
       }
     )
   )

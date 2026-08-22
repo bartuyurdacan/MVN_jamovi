@@ -115,7 +115,6 @@ utils::globalVariables(c(
 #' summary(result, select = "new_data")
 #'
 #'
-#' @importFrom energy mvnorm.etest mvnorm.e
 #' @importFrom boot boot
 #' @importFrom moments kurtosis skewness
 #' @importFrom methods new

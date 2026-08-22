@@ -2,7 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.DS_Store
+MD5
 doc
 Meta
 build/
 *.jmo
+MVN_*.tar.gz
+MVN.Rcheck/

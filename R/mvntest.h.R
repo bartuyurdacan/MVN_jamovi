@@ -123,7 +123,7 @@ mvntestOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 "nBoot",
                 nBoot,
                 min=100,
-                max=100000,
+                max=10000,
                 default=1000)
             private$..showQQPlot <- jmvcore::OptionBool$new(
                 "showQQPlot",
@@ -226,7 +226,21 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 clearWith=list(
                     "vars",
                     "group",
-                    "mvnTest"),
+                    "mvnTest",
+                    "transform",
+                    "powerFamily",
+                    "scale",
+                    "impute",
+                    "bootstrap",
+                    "nBoot"),
+                refs=list(
+                    "mardia1970",
+                    "henzeZirkler1990",
+                    "henzeWagner1997",
+                    "royston1992",
+                    "doornikHansen2008",
+                    "szekelyRizzo2005",
+                    "korkmaz2014"),
                 columns=list(
                     list(
                         `name`="group", 
@@ -260,7 +274,12 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 clearWith=list(
                     "vars",
                     "group",
-                    "univariateTest"),
+                    "univariateTest",
+                    "transform",
+                    "powerFamily",
+                    "scale",
+                    "impute"),
+                refs="korkmaz2014",
                 columns=list(
                     list(
                         `name`="group", 
@@ -297,7 +316,11 @@ mvntestResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 visible="(showDescriptives)",
                 clearWith=list(
                     "vars",
-                    "group"),
+                    "group",
+                    "transform",
+                    "powerFamily",
+                    "scale",
+                    "impute"),
                 columns=list(
                     list(
                         `name`="group", 
@@ -456,7 +479,7 @@ mvntestBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             super$initialize(
                 package = "MVN",
                 name = "mvntest",
-                version = c(6,3,0),
+                version = c(1,0,0),
                 options = options,
                 results = mvntestResults$new(options=options),
                 data = data,
@@ -486,8 +509,10 @@ mvntestBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
 #' @param powerFamily Power transformation family to apply before analysis.
 #' @param scale Standardize data (zero mean, unit variance) before analysis.
 #' @param impute Method for handling missing data.
-#' @param bootstrap Use bootstrap resampling for p-value estimation.
-#' @param nBoot Number of bootstrap replicates.
+#' @param bootstrap Use bootstrap resampling for p-value estimation. The
+#'   Energy test always uses parametric bootstrap, regardless of this setting.
+#' @param nBoot Number of bootstrap replicates. This value is also used by the
+#'   Energy test.
 #' @param showQQPlot Show chi-square Q-Q plot for multivariate normality
 #'   assessment.
 #' @param showUniPlots Show univariate Q-Q plots for each variable.

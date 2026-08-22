@@ -4,7 +4,7 @@
 \alias{energy}
 \title{E-Statistic Test for Multivariate Normality (Energy Test)}
 \usage{
-energy(data, B = 1000, seed = 123)
+energy(data, B = 1000, seed = NULL)
 }
 \arguments{
 \item{data}{A numeric matrix or data frame with observations in rows and variables in columns.}

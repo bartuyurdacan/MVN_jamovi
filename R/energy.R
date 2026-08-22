@@ -1,4 +1,3 @@
-utils::globalVariables("mvnorm.e")
 #' E-Statistic Test for Multivariate Normality (Energy Test)
 #'
 #' Performs the E-statistic test for multivariate normality using a parametric bootstrap
@@ -24,7 +23,7 @@ utils::globalVariables("mvnorm.e")
 #' @importFrom stats complete.cases rnorm
 #' @importFrom moments skewness kurtosis
 #' @export
-energy <- function(data, B = 1000, seed = 123) {
+energy <- function(data, B = 1000, seed = NULL) {
   # Convert to data frame and drop non-numeric columns
   df <- as.data.frame(data)
   num_cols <- vapply(df, is.numeric, logical(1))
@@ -50,12 +49,20 @@ energy <- function(data, B = 1000, seed = 123) {
     matrix(stats::rnorm(n * d), nrow = n, ncol = d)
   }
   
-  set.seed(seed)
+  if (!is.null(seed)) {
+    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      old_seed <- get(".Random.seed", envir = .GlobalEnv)
+      on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+    } else {
+      on.exit(rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+    }
+    set.seed(seed)
+  }
   
   # Perform bootstrap
   boot_obj <- boot::boot(
     data      = x,
-    statistic = mvnorm.e,
+    statistic = energy::mvnorm.e,
     R         = B,
     sim       = "parametric",
     ran.gen   = ran_gen
@@ -63,7 +70,7 @@ energy <- function(data, B = 1000, seed = 123) {
   
   # Compute p-value and observed statistic
   if (B > 0) {
-    p_val <- 1 - mean(boot_obj$t < boot_obj$t0)
+    p_val <- (1 + sum(boot_obj$t >= boot_obj$t0)) / (length(boot_obj$t) + 1)
   } else {
     p_val <- NA_real_
   }

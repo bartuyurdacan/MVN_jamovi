@@ -35,8 +35,6 @@
 #' @importFrom stats complete.cases cov qchisq
 #' @importFrom MASS kde2d
 #' @importFrom ggplot2 ggplot aes geom_point geom_abline labs theme_minimal theme element_text element_line element_rect margin
-#' @importFrom plotly plot_ly layout
-#' @importFrom viridis viridis
 #' @export
 
 multivariate_diagnostic_plot <- function(data,
@@ -59,10 +57,16 @@ multivariate_diagnostic_plot <- function(data,
     df <- df[keep, , drop = FALSE]
   }
   
-  # Compute kernel density estimate
-  kde <- MASS::kde2d(df[[1]], df[[2]], n = 100)
-  
   type <- match.arg(type)
+  if (type %in% c("persp", "contour")) {
+    if (ncol(df) != 2)
+      stop("Interactive density plots require exactly two numeric variables.")
+    if (!requireNamespace("plotly", quietly = TRUE))
+      stop("Package 'plotly' is required for interactive density plots.")
+    if (!requireNamespace("viridis", quietly = TRUE))
+      stop("Package 'viridis' is required for interactive density plots.")
+    kde <- MASS::kde2d(df[[1]], df[[2]], n = 100)
+  }
   
   if (type == "qq") {
     
@@ -114,17 +118,17 @@ multivariate_diagnostic_plot <- function(data,
   else if (type == "persp") {
     
     # Build the plotly surface
-    fig <- plot_ly(
+    fig <- plotly::plot_ly(
       x      = ~kde$x,
       y      = ~kde$y,
       z      = ~kde$z,
       type   = "surface",
-      colors = viridis(100),
+      colors = viridis::viridis(100),
       showscale = TRUE,
       colorbar   = list(title = ""),        # ⬅ remove legend title
       
     ) %>%
-      layout(
+      plotly::layout(
         title = "3D KDE Surface",
         scene = list(
           xaxis = list(title = names(df)[1]),
@@ -146,12 +150,12 @@ multivariate_diagnostic_plot <- function(data,
   else if (type == "contour") {
   
     
-    fig_contour <- plot_ly(
+    fig_contour <- plotly::plot_ly(
       x          = ~kde$x,
       y          = ~kde$y,
       z          = ~kde$z,
       type       = "contour",
-      colorscale = viridis(20),
+      colorscale = viridis::viridis(20),
       showscale  = TRUE,
       colorbar   = list(title = ""),        # ⬅ remove legend title
       contours   = list(
@@ -161,7 +165,7 @@ multivariate_diagnostic_plot <- function(data,
       ),
       hoverinfo  = "x+y+z"
     ) %>%
-      layout(
+      plotly::layout(
         title = "Kernel Density Estimate (Contour)",
         xaxis = list(title = names(df)[1]),
         yaxis = list(title = names(df)[2]),

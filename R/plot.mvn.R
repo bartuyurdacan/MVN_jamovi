@@ -25,7 +25,6 @@
 #'
 #' @importFrom ggplot2 ggtitle
 #' @importFrom stringr str_to_upper str_to_title
-#' @importFrom plotly layout
 #' @method plot mvn
 #' @export
 plot.mvn <- function(x, ...) {

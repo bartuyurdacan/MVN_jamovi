@@ -34,9 +34,7 @@ utils::globalVariables(c("is_outlier", "distance", "chi2q"))
 #' @importFrom graphics plot abline legend text
 #' @importFrom MASS cov.mcd
 #' @importFrom dplyr arrange
-#' @importFrom ggplot2 ggplot aes geom_point geom_text scale_color_manual
-#'   scale_shape_manual geom_vline labs annotate theme_minimal theme element_text
-#'   element_rect element_blank
+#' @importFrom ggplot2 ggplot aes geom_point geom_text scale_color_manual scale_shape_manual geom_vline labs annotate theme_minimal theme element_text element_rect element_blank
 #' @export
 mv_outlier <- function(data,
                        outlier = TRUE,

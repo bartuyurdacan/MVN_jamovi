@@ -21,7 +21,6 @@
 #' summary(result, select = c("mvn", "outliers"))  # Show selected sections only
 #' }
 #'
-#' @importFrom cli cli_h1 cli_alert_info
 #' @importFrom utils head
 #' @method summary mvn
 #' @export

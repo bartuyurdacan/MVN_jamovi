@@ -231,7 +231,7 @@ royston <- function(data, tol = 1e-25, bootstrap = FALSE, B = 1000, cores = 1) {
     
     if (n_boot_used > 0) {
       # Bootstrap p-value:
-      p_val <- mean(boot_vec >= H_stat)
+      p_val <- (1 + sum(boot_vec >= H_stat)) / (length(boot_vec) + 1)
       method <- "parametric bootstrap"
     } else {
       p_val <- NA_real_

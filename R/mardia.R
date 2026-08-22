@@ -170,8 +170,9 @@ mardia <- function(data, use_population = TRUE, tol = 1e-25,
       n_boot_used <- nrow(boot_mat)
       
       # Parametric‐bootstrap p‐values:
-      p_skew <- mean(boot_skew >= skew_stat)
-      p_kurt <- mean(abs(boot_kurt) >= abs(kurt_stat))
+      p_skew <- (1 + sum(boot_skew >= skew_stat)) / (length(boot_skew) + 1)
+      p_kurt <- (1 + sum(abs(boot_kurt) >= abs(kurt_stat))) /
+        (length(boot_kurt) + 1)
       
       method_skew <- "bootstrap"
       method_kurt <- "bootstrap"

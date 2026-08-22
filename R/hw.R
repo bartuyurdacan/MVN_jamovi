@@ -180,7 +180,7 @@ hw <- function(data, use_population = TRUE, tol = 1e-25,
     
     if (n_boot_used > 0) {
       # Parametric-bootstrap p-value
-      p_value <- mean(boot_vec >= hw_stat)
+      p_value <- (1 + sum(boot_vec >= hw_stat)) / (length(boot_vec) + 1)
       method <- "bootstrap"
     } else {
       p_value <- NA_real_

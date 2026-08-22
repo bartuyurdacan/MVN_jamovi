@@ -1,7 +1,7 @@
 Package: MVN
 Type: Package
 Title: Multivariate Normality Tests
-Version: 0.1.2
+Version: 1.0.0
 Authors@R:
     c(
       person(given = "Fikret Bartu", family = "Yurdacan", role = c("aut", "cre"),
@@ -13,7 +13,6 @@ Authors@R:
       person(given = "Gokmen", family = "Zararsiz", role = "aut",
              email = "gokmenzararsiz@hotmail.com")
     )
-Maintainer: Fikret Bartu Yurdacan <fbartuyurdacan@trakya.edu.tr>
 Imports:
     jmvcore (>= 0.8.5),
     R6,
@@ -29,25 +28,27 @@ Imports:
     stringr,
     tibble,
     ggplot2,
-    viridis,
-    cli,
     energy,
-    plotly,
-    mice
+    parallel
 Suggests:
     DT,
     bslib,
     future,
     haven,
     jsonlite,
+    cli,
+    mice,
+    plotly,
     readxl,
     shiny,
     yaml,
     promises,
     testthat (>= 3.0.0),
+    viridis,
     zip
 Config/testthat/edition: 3
 Collate:
+    '00jmv.R'
     'mvn.R'
     'mardia.R'
     'hz.R'
@@ -78,7 +79,7 @@ Description:
     Diagnostic plots are available via both 'ggplot2' and interactive 'plotly' visualizations. See Korkmaz et al. (2014) <https://journal.r-project.org/articles/RJ-2014-031/RJ-2014-031.pdf>.
 Encoding: UTF-8
 License: MIT + file LICENSE
-URL: https://biosoft.shinyapps.io/mvn-shiny-app/, https://selcukorkmaz.github.io/mvn-tutorial/, https://github.com/selcukorkmaz/MVN
-BugReports: https://github.com/selcukorkmaz/MVN/issues
-RoxygenNote: 7.3.3
+URL: https://github.com/bartuyurdacan/MVN_jamovi, https://biosoft.shinyapps.io/mvn-shiny-app/, https://selcukorkmaz.github.io/mvn-tutorial/
+BugReports: https://github.com/bartuyurdacan/MVN_jamovi/issues
 NeedsCompilation: no
+Config/roxygen2/version: 8.0.0

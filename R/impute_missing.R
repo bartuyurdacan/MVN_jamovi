@@ -5,10 +5,8 @@
 #' @param data A numeric matrix or data frame.
 #' @param method Character; one of \code{"mean"}, \code{"median"}, or \code{"mice"}. Default: \code{"mean"}.
 #' @param m Integer; number of multiple imputations when \code{method = "mice"}. Default: 5.
-#' @param seed Integer; random seed for \code{mice} imputation. Default: 123.
+#' @param seed Optional integer seed for reproducible MICE imputation. The global RNG state is restored after use.
 #' @param ... Additional arguments passed to \code{mice::mice} when \code{method = "mice"}.
-#'
-#' @importFrom mice mice complete
 #'
 #' @return A data frame with missing values imputed.
 #'
@@ -18,7 +16,11 @@
 #' impute_missing(df, method = "mice")
 #' }
 #' @export
-impute_missing <- function(data, method = c("mean", "median", "mice"), m = 5, seed = 123, ...) {
+impute_missing <- function(data,
+                           method = c("mean", "median", "mice"),
+                           m = 5,
+                           seed = NULL,
+                           ...) {
   method <- match.arg(method)
   if (!is.data.frame(data) && !is.matrix(data)) {
     stop("`data` must be a data frame or matrix")
@@ -41,7 +43,15 @@ impute_missing <- function(data, method = c("mean", "median", "mice"), m = 5, se
     if (!requireNamespace("mice", quietly = TRUE)) {
       stop("Package 'mice' is required for method = 'mice'")
     }
-    set.seed(seed)
+    if (!is.null(seed)) {
+      if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+        old_seed <- get(".Random.seed", envir = .GlobalEnv)
+        on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+      } else {
+        on.exit(rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+      }
+      set.seed(seed)
+    }
     imp <- mice::mice(df, m = m, printFlag = FALSE, ...)
     df <- mice::complete(imp)
   }
